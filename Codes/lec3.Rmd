@@ -2,8 +2,6 @@
 title: "SOSC 5340 Lecture 3"
 output: pdf_document
 ---
-
-
 ```{r}
 # load some required packages
 library(ggplot2)
@@ -45,7 +43,7 @@ logLikelihoodLogit = function(vBeta, mX, vY) {
 
 ```
 
-Then use optim package to find $\beta$ that maximize log likelihood (or minimize negative log likelihood)
+Then use `optim` package to find $\beta$ that maximize log likelihood (or minimize negative log likelihood)
 ```{r}
 vY = as.matrix(data['InMichelin'])
 mX = as.matrix(data.frame(`(Intercept)` = 1, data[c('Service','Decor', 'Food', 'Price')]))
@@ -65,6 +63,9 @@ optimLogit <- optim(par = vBeta0,
 coef = optimLogit$par  # coefficient
 coef.sd = sqrt(diag(solve(optimLogit$hessian))) # standard error
 tv  <- coef  / coef.sd # t-value
+## pt is a student-t distribution
+## the below line will be the correct way to calculate p-values if you are running linear regression
+## but I don't remember whether logistic regression's test statistics follow student-t
 pv <- 2 * pt(tv, df = nrow(mX) - ncol(mX), lower.tail = F) # p-value
 d = data.frame(term = d1$term, "estimate" = coef,  "std.error" = coef.sd, "statistic" = tv,  "p.value" = pv, check.names = FALSE)
 
@@ -80,7 +81,6 @@ d$group <- "MLE_by_hand"
 
 print (d1)
 print (d)
-  # geom_errorbar(aes(ymin = ))
 ```
 
 # marginal effects and predicted probabilities
@@ -102,11 +102,12 @@ summary(l)
 ```{r}
 AME <- margins(l)
 AME
-MEM <- margins(l, at = list(wage = mean(Wage$wage)))
+
+MEM <- margins(l, at = list(wage = mean(Wage$education), race = mean(Wage$race)))
 MEM
 
 # Marginal effect at representive values
-MER <- margins(l, at = list(wage = 100))
+MER <- margins(l, at = list(wage = c(100,200), education = c("2. HS Grad", "3. Some College")))
 MER
 
 ```
@@ -145,8 +146,8 @@ The marginal effect of wage on health vary by education; for less education popu
 
 ```{r}
 
-l2 = glm(health ~ wage * education + race, data = Wage, family=binomial())
-plot_model(l2, type = "pred", terms = c("wage", "education"), ci.lvl = NA )
+l2 = glm(health ~ wage + education * race, data = Wage, family=binomial())
+plot_model(l2, type = "pred", terms = c("wage", "education"))
 
 ```
 
@@ -222,7 +223,6 @@ The data set contains variables on 200 students.
 - The predictor variables are social economic status, ses, a three-level categorical variable and writing score, write, a continuous variable. 
 ```{r}
 ml <- read.dta("https://stats.idre.ucla.edu/stat/data/hsbdemo.dta")
-
 ```
 
 We run multinomial regression. The first category is used as the reference group, here general
@@ -289,7 +289,6 @@ dispersiontest(mp)
 mnb <- glm.nb(art~fem+mar+kid5+phd+ment, data=ab)
 summary(mnb)
 
-
 screenreg(list("Poisson" = mp, "Negative binomial" = mnb))
 ```
 
@@ -317,7 +316,7 @@ D
 What is the probability we observe $D$ less than the currently observed 180.196?
 
 ```{r}
-pchisq(180.196, 1)
+1- pchisq(180.196, 1)
 ```
 
 This means that the probability we observe $D$ equals to or larger than 180.196 is 0. 
